@@ -54,6 +54,105 @@ from utils.constants import *
 from utils.visualizations import plot_in_out_degree_distributions, visualize_graph
 
 
+def get_ki_data(nodes_path=None, edges_path=None, multiple_paths=None, dataset='train', multiple=False):
+
+    # inflammatory  : 0
+    # lymphocyte    : 1
+    # fibroblast    : 2
+    # epithelial    : 3
+
+    # nodes with features and label
+    if not multiple:
+        node_df = pd.read_csv(os.path.join(KI_PATH, nodes_path))
+    else:
+        # node_df = pd.concat([pd.read_csv(os.path.join(KI_PATH, dataset, path[1])) for path in multiple_paths], ignore_index=True)
+        node_df = pd.concat([pd.read_csv(os.path.join(KI_PATH, path[1])) for path in multiple_paths], ignore_index=True)
+        # for path in multiple_paths:
+        #     node_df.concat(pd.read_csv(os.path.join(KI_PATH, dataset, path[1])), ignore_index=True)
+
+    node_df["gt"].replace({"inflammatory":0, "lymphocyte":1, "fibroblast and endothelial":2, "epithelial":3}, inplace=True)
+    # node_df["type"].replace({"inflammatory":0, "lymphocyte":1, "fibroblast and endothelial":2, "epithelial":3}, inplace=True)
+    node_to_coo_df = node_df.drop(['type', 'gt', 'x', 'y', 'id'], axis = 1).astype(pd.SparseDtype("float32", np.nan))
+    # node_to_coo_df = node_df.drop(['type', 'x', 'y', 'id'], axis = 1).astype(pd.SparseDtype("float32", np.nan))
+    # node_to_coo_df = node_df.drop(['type', 'id'], axis = 1).astype(pd.SparseDtype("float32", np.nan))
+
+    # node labels
+    # shape = (N, 1)
+    node_labels_npy = node_df['gt'].to_numpy()
+    # node_labels_npy = node_df['type'].to_numpy()
+
+    # node features
+    # shape = (N, FIN), where N is the number of nodes and FIN is the number of input features
+    node_features_csr = sp.csr_matrix(node_to_coo_df.sparse.to_coo())
+    # print('node_features_csr.toarray()', node_features_csr.toarray())
+
+    # adjacency list
+    # adjacency_list_df = pd.read_csv(os.path.join(KI_PATH, edges_path), header=None)
+    if not multiple:
+        adjacency_list_df = pd.read_csv(os.path.join(KI_PATH, edges_path))
+    else:
+        # adjacency_list_df = pd.concat([pd.read_csv(os.path.join(KI_PATH, dataset, path[0])) for path in multiple_paths],
+        adjacency_list_df = pd.concat([pd.read_csv(os.path.join(KI_PATH, path[0])) for path in multiple_paths],
+                            ignore_index=True)
+
+    # shape = (N, number of neighboring nodes) <- this is a dictionary not a matrix!
+    adjacency_list_dict = {}
+    temp_adjacency_list_ids_dict = {}
+
+    for index, row in node_df.iterrows():
+        adjacency_list_dict[index] = []
+        temp_adjacency_list_ids_dict[row.id] = index
+
+    for index, row in adjacency_list_df.iterrows():
+        adjacency_list_dict[temp_adjacency_list_ids_dict[row[0]]].append(temp_adjacency_list_ids_dict[row[1]])
+        adjacency_list_dict[temp_adjacency_list_ids_dict[row[1]]].append(temp_adjacency_list_ids_dict[row[0]])
+
+    return node_features_csr, node_labels_npy, adjacency_list_dict
+
+
+def load_ki_graph_data(device, paths, dataset, multiple=False):
+
+    if not multiple:
+        node_features_csr, node_labels_npy, adjacency_list_dict = get_ki_data(nodes_path=paths[2], edges_path=paths[1],
+                                                                              multiple=multiple)
+    else:
+        node_features_csr, node_labels_npy, adjacency_list_dict = get_ki_data(multiple_paths=paths, multiple=multiple,
+                                                                              dataset=dataset)
+    # shape = (N, FIN), where N is the number of nodes and FIN is the number of input features
+    # node_features_csr
+
+    # shape = (N, 1)
+    # node_labels_npy
+
+    # shape = (N, number of neighboring nodes) <- this is a dictionary not a matrix!
+    # adjacency_list_dict
+
+    """ Normalize the features (helps with training)"""
+    # print(node_features_csr.toarray()[:10])
+    node_features_csr = normalize_features_sparse(node_features_csr)
+    # print(node_features_csr.toarray()[:10])
+    num_of_nodes = len(node_labels_npy)
+
+    # shape = (2, E), where E is the number of edges, and 2 for source and target nodes. Basically edge index
+    # contains tuples of the format S->T, e.g. 0->3 means that node with id 0 points to a node with id 3.
+    topology = build_edge_index(adjacency_list_dict, num_of_nodes, add_self_edges=True)
+
+    # Note: topology is just a fancy way of naming the graph structure data
+    # (aside from edge index it could be in the form of an adjacency matrix)
+
+    """# Convert to dense PyTorch tensors"""
+
+    # Needs to be long int type because later functions like PyTorch's index_select expect it
+    topology = torch.tensor(topology, dtype=torch.long, device=device)
+    node_labels = torch.tensor(node_labels_npy, dtype=torch.long, device=device)  # Cross entropy expects a long int
+    node_features = torch.tensor(node_features_csr.todense(), device=device)
+
+    # Indices that help us extract nodes that belong to the train/val and test splits
+    pred_indices = torch.arange(0, num_of_nodes, dtype=torch.long, device=device)  # TODO review if get all indices
+
+    return node_features, node_labels, topology, pred_indices
+
+
 def load_graph_data(training_config, device):
     dataset_name = training_config['dataset_name'].lower()
     layer_type = training_config['layer_type']
