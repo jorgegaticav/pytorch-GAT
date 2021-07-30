@@ -16,7 +16,8 @@ import utils.utils as utils
 # Simple decorator function so that I don't have to pass arguments that don't change from epoch to epoch
 def get_main_loop(config, gat, cross_entropy_loss, optimizer,
                   train_node_features, train_node_labels, train_edge_index, train_indices,
-                  patience_period, time_start, val_node_features=None, val_node_labels=None, val_edge_index=None, val_indices=None,
+                  patience_period, time_start, val_node_features=None, val_node_labels=None, val_edge_index=None,
+                  val_indices=None,
                   test_node_features=None, test_node_labels=None, test_edge_index=None, test_indices=None):
     node_dim = 0  # node axis
 
@@ -96,7 +97,7 @@ def get_main_loop(config, gat, cross_entropy_loss, optimizer,
             class_predictions.cpu().numpy().tofile('gat_prediction.csv', sep=',')
             print('done!')
 
-            print(metrics.classification_report(gt_node_labels.cpu().numpy(), class_predictions.cpu().numpy()))
+            print(metrics.classification_report(gt_node_labels.cpu().numpy(), class_predictions.cpu().numpy(), digits=4))
 
         accuracy = torch.sum(torch.eq(class_predictions, gt_node_labels).long()).item() / len(gt_node_labels)
 
@@ -141,6 +142,9 @@ def get_main_loop(config, gat, cross_entropy_loss, optimizer,
                 PATIENCE_CNT += 1  # otherwise keep counting
 
             if PATIENCE_CNT >= patience_period:
+                print(f'last epoch: {epoch}')
+                print(metrics.classification_report(gt_node_labels.cpu().numpy(), class_predictions.cpu().numpy(),
+                                                    digits=4))
                 raise Exception('Stopping the training, the universe has no more patience for this training.')
 
             # {0: "green", 1: "yellow", 2: "blue", 3: "red"}
@@ -513,11 +517,13 @@ ki_test_paths = [
     # ["P25_5_1_gen0_delaunay_forGAT_train_edges.csv", "P25_5_1_gen0_delaunay_forGAT_train_nodes.csv"],
     # ["P25_5_1_gen0_k10_forGAT_train_edges.csv", "P25_5_1_gen0_k10_forGAT_train_nodes.csv"],
     # ["P25_5_1_gen0_k6_forGAT_train_edges.csv", "P25_5_1_gen0_k6_forGAT_train_nodes.csv"],
-    ["HE_T12193_90_Default_Extended_1_2_gen0_delaunay_forGAT_train_edges.csv", "HE_T12193_90_Default_Extended_1_2_gen0_delaunay_forGAT_train_nodes.csv"],
+    ["HE_T12193_90_Default_Extended_1_2_gen0_delaunay_forGAT_train_edges.csv",
+     "HE_T12193_90_Default_Extended_1_2_gen0_delaunay_forGAT_train_nodes.csv"],
     # ["HE_T12193_90_Default_Extended_1_2_gen0_k10_forGAT_train_edges.csv",
     #  "HE_T12193_90_Default_Extended_1_2_gen0_k10_forGAT_train_nodes.csv"],
     # ["HE_T12193_90_Default_Extended_1_2_gen0_k6_forGAT_train_edges.csv", "HE_T12193_90_Default_Extended_1_2_gen0_k6_forGAT_train_nodes.csv"],
-    ["HE_T12193_90_Default_Extended_1_1_gen0_delaunay_forGAT_train_edges.csv", "HE_T12193_90_Default_Extended_1_1_gen0_delaunay_forGAT_train_nodes.csv"],
+    ["HE_T12193_90_Default_Extended_1_1_gen0_delaunay_forGAT_train_edges.csv",
+     "HE_T12193_90_Default_Extended_1_1_gen0_delaunay_forGAT_train_nodes.csv"],
     # ["HE_T12193_90_Default_Extended_1_1_gen0_k10_forGAT_train_edges.csv",
     #  "HE_T12193_90_Default_Extended_1_1_gen0_k10_forGAT_train_nodes.csv"],
     # ["HE_T12193_90_Default_Extended_1_1_gen0_k6_forGAT_train_edges.csv",
@@ -606,7 +612,7 @@ ki_full_train_paths = [
     # ["P9_3_2_gen1_k10_forGAT_train_edges.csv", "P9_3_2_gen1_k10_forGAT_train_nodes.csv"],
     # ["P9_3_2_gen1_k6_forGAT_train_edges.csv", "P9_3_2_gen1_k6_forGAT_train_nodes.csv"],
 
-# ki_val_paths
+    # ki_val_paths
     ["P19_2_1_gen1_delaunay_forGAT_train_edges.csv", "P19_2_1_gen1_delaunay_forGAT_train_nodes.csv"],  # val
     # ["P19_2_1_gen1_k10_forGAT_train_edges.csv", "P19_2_1_gen1_k10_forGAT_train_nodes.csv"],
     # ["P19_2_1_gen1_k6_forGAT_train_edges.csv", "P19_2_1_gen1_k6_forGAT_train_nodes.csv"],
@@ -650,7 +656,7 @@ ki_full_train_paths = [
     # ["P9_4_1_gen1_k10_forGAT_train_edges.csv", "P9_4_1_gen1_k10_forGAT_train_nodes.csv"],
     # ["P9_4_1_gen1_k6_forGAT_train_edges.csv", "P9_4_1_gen1_k6_forGAT_train_nodes.csv"],
 
-# ki_test_paths
+    # ki_test_paths
     ["N10_1_1_gen0_delaunay_forGAT_train_edges.csv", "N10_1_1_gen0_delaunay_forGAT_train_nodes.csv"],  # test
     # ["N10_1_1_gen0_k10_forGAT_train_edges.csv", "N10_1_1_gen0_k10_forGAT_train_nodes.csv"],
     # ["N10_1_1_gen0_k6_forGAT_train_edges.csv", "N10_1_1_gen0_k6_forGAT_train_nodes.csv"],
@@ -707,6 +713,45 @@ ki_full_train_paths = [
 
 ]
 
+# hover-net experiment
+ki_train_paths_hn = [
+    ["train/N10_1_3_delaunay_orig_edges.csv", "train/N10_1_3_delaunay_orig_nodes.csv"],
+    # ["train/P19_1_1_delaunay_orig_edges.csv","train/P19_1_1_delaunay_orig_nodes.csv"], # train Pred not gen yet
+    ["train/P19_1_2_delaunay_orig_edges.csv", "train/P19_1_2_delaunay_orig_nodes.csv"],  # train
+    ["train/P20_1_3_delaunay_orig_edges.csv", "train/P20_1_3_delaunay_orig_nodes.csv"],  # train
+    ["train/P20_2_3_delaunay_orig_edges.csv", "train/P20_2_3_delaunay_orig_nodes.csv"],  # train
+    ["train/P9_1_1_delaunay_orig_edges.csv", "train/P9_1_1_delaunay_orig_nodes.csv"],  # train
+    ["train/P9_2_2_delaunay_orig_edges.csv", "train/P9_2_2_delaunay_orig_nodes.csv"],  # train
+    ["train/P19_3_2_delaunay_orig_edges.csv", "train/P19_3_2_delaunay_orig_nodes.csv"],  # train
+    ["train/P20_5_2_delaunay_orig_edges.csv", "train/P20_5_2_delaunay_orig_nodes.csv"],  # train
+    ["train/P20_6_1_delaunay_orig_edges.csv", "train/P20_6_1_delaunay_orig_nodes.csv"],  # train
+    ["train/P20_6_2_delaunay_orig_edges.csv", "train/P20_6_2_delaunay_orig_nodes.csv"],
+    ["train/P9_3_1_delaunay_orig_edges.csv", "train/P9_3_1_delaunay_orig_nodes.csv"],  # train
+    ["train/P9_3_2_delaunay_orig_edges.csv", "train/P9_3_2_delaunay_orig_nodes.csv"],  # train
+]
+ki_val_paths_hn = [
+    ["val/P19_2_1_delaunay_orig_edges.csv", "val/P19_2_1_delaunay_orig_nodes.csv"],  # val
+    ["val/P20_3_2_delaunay_orig_edges.csv", "val/P20_3_2_delaunay_orig_nodes.csv"],  # val
+    ["val/P20_3_3_delaunay_orig_edges.csv", "val/P20_3_3_delaunay_orig_nodes.csv"],  # val
+    ["val/N10_2_2_delaunay_orig_edges.csv", "val/N10_2_2_delaunay_orig_nodes.csv"],
+    ["val/P9_4_2_delaunay_orig_edges.csv", "val/P9_4_2_delaunay_orig_nodes.csv"],  # val
+    ["val/P19_2_2_delaunay_orig_edges.csv", "val/P19_2_2_delaunay_orig_nodes.csv"],  # val
+    ["val/P9_4_1_delaunay_orig_edges.csv", "val/P9_4_1_delaunay_orig_nodes.csv"],  # val
+]
+ki_test_paths_hn = [
+    ["test/N10_1_1_delaunay_orig_edges.csv", "test/N10_1_1_delaunay_orig_nodes.csv"],  # test
+    ["test/P9_2_1_delaunay_orig_edges.csv", "test/P9_2_1_delaunay_orig_nodes.csv"],  # test
+    ["test/N10_1_2_delaunay_orig_edges.csv", "test/N10_1_2_delaunay_orig_nodes.csv"],  # test
+    ["test/P20_4_1_delaunay_orig_edges.csv", "test/P20_4_1_delaunay_orig_nodes.csv"],  # test
+    ["test/P20_4_2_delaunay_orig_edges.csv", "test/P20_4_2_delaunay_orig_nodes.csv"],  # test
+    ["test/P20_5_1_delaunay_orig_edges.csv", "test/P20_5_1_delaunay_orig_nodes.csv"],  # test
+    ["test/P19_3_1_delaunay_orig_edges.csv", "test/P19_3_1_delaunay_orig_nodes.csv"],  # test
+    ["test/HE_T12193_90_Default_Extended_1_2_delaunay_orig_edges.csv",
+     "test/HE_T12193_90_Default_Extended_1_2_delaunay_orig_nodes.csv"],
+    ["test/HE_T12193_90_Default_Extended_1_1_delaunay_orig_edges.csv",
+     "test/HE_T12193_90_Default_Extended_1_1_delaunay_orig_nodes.csv"],
+]
+
 
 def train_gat_ki(config):
     global BEST_VAL_PERF, BEST_VAL_LOSS
@@ -724,13 +769,13 @@ def train_gat_ki(config):
 
     if not config['final']:
         train_node_features, train_node_labels, train_edge_index, train_indices = \
-            load_ki_graph_data(device, ki_train_paths, multiple=True, dataset="train")
+            load_ki_graph_data(device, ki_train_paths_hn, multiple=True, dataset="train")
 
         val_node_features, val_node_labels, val_edge_index, val_indices = \
-            load_ki_graph_data(device, ki_val_paths, multiple=True, dataset="val")
+            load_ki_graph_data(device, ki_val_paths_hn, multiple=True, dataset="val")
 
         test_node_features, test_node_labels, test_edge_index, test_indices = \
-            load_ki_graph_data(device, ki_test_paths, multiple=True, dataset="test")
+            load_ki_graph_data(device, ki_test_paths_hn, multiple=True, dataset="test")
     else:
         train_node_features, train_node_labels, train_edge_index, train_indices = \
             load_ki_graph_data(device, ki_full_train_paths, multiple=True, dataset="train")
@@ -823,7 +868,7 @@ def get_training_args():
     parser.add_argument("--patience_period", type=int,
                         help="number of epochs with no improvement on val before terminating", default=1000)
     parser.add_argument("--lr", type=float, help="model learning rate", default=5e-3)  # 0.005
-    parser.add_argument("--weight_decay", type=float, help="L2 regularization on model weights", default=5e-4) # 0.0005
+    parser.add_argument("--weight_decay", type=float, help="L2 regularization on model weights", default=5e-4)  # 0.0005
     parser.add_argument("--should_test", action='store_true',
                         help='should test the model on the test dataset? (no by default)')
     parser.add_argument("--final", action='store_true',

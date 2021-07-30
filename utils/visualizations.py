@@ -57,7 +57,8 @@ def plot_in_out_degree_distributions(edge_index, num_of_nodes, dataset_name):
     plt.show()
 
 
-def visualize_graph(edge_index, node_labels, dataset_name, visualization_tool=GraphVisualizationTool.IGRAPH):
+# def visualize_graph(edge_index, node_labels, dataset_name, visualization_tool=GraphVisualizationTool.IGRAPH):
+def visualize_graph(edge_index, node_labels, dataset_name, visualization_tool=GraphVisualizationTool.NETWORKX):
     """
     Check out this blog for available graph visualization tools:
         https://towardsdatascience.com/large-graph-visualization-tools-and-approaches-2b8758a1cd59

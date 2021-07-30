@@ -65,16 +65,10 @@ def get_ki_data(nodes_path=None, edges_path=None, multiple_paths=None, dataset='
     if not multiple:
         node_df = pd.read_csv(os.path.join(KI_PATH, nodes_path))
     else:
-        # node_df = pd.concat([pd.read_csv(os.path.join(KI_PATH, dataset, path[1])) for path in multiple_paths], ignore_index=True)
         node_df = pd.concat([pd.read_csv(os.path.join(KI_PATH, path[1])) for path in multiple_paths], ignore_index=True)
-        # for path in multiple_paths:
-        #     node_df.concat(pd.read_csv(os.path.join(KI_PATH, dataset, path[1])), ignore_index=True)
 
     node_df["gt"].replace({"inflammatory":0, "lymphocyte":1, "fibroblast and endothelial":2, "epithelial":3}, inplace=True)
-    # node_df["type"].replace({"inflammatory":0, "lymphocyte":1, "fibroblast and endothelial":2, "epithelial":3}, inplace=True)
     node_to_coo_df = node_df.drop(['type', 'gt', 'x', 'y', 'id'], axis = 1).astype(pd.SparseDtype("float32", np.nan))
-    # node_to_coo_df = node_df.drop(['type', 'x', 'y', 'id'], axis = 1).astype(pd.SparseDtype("float32", np.nan))
-    # node_to_coo_df = node_df.drop(['type', 'id'], axis = 1).astype(pd.SparseDtype("float32", np.nan))
 
     # node labels
     # shape = (N, 1)

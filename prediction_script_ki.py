@@ -30,8 +30,8 @@ def predict(gat, node_features, edge_index, pred_indices, slide_name):
         # Compare those to true (ground truth) labels and find the fraction of correct predictions -> accuracy metric.
         class_predictions = torch.argmax(nodes_unnormalized_scores, dim=-1)
 
-        print(f'exporting csv: {slide_name}_gat_prediction.csv')
-        class_predictions.cpu().numpy().tofile(f'{slide_name}_gat_prediction.csv', sep=',')
+        print(f'exporting csv: predictions/{slide_name}_gat_prediction.csv')
+        class_predictions.cpu().numpy().tofile(f'predictions/{slide_name}_gat_prediction.csv', sep=',')
         print('done!')
 
     return main_loop  # return the decorated function

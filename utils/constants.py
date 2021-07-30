@@ -86,6 +86,20 @@ PPI_URL = 'https://data.dgl.ai/dataset/ppi.zip'  # preprocessed PPI data from De
 PPI_NUM_INPUT_FEATURES = 50
 PPI_NUM_CLASSES = 121
 
+#
+""" KI specific constants """
+#
 
+KI_PATH = os.path.join(DATA_DIR_PATH, 'ki')
+PIXEL_PATH = os.path.join(DATA_DIR_PATH, 'pixel')
 
+## ADDED N10 4 slides
+KI_TRAIN_RANGE = [0, 9481]  # we're using the first 140 nodes as the training nodes
+KI_VAL_RANGE = [9482, 10956]
+KI_TEST_RANGE = [10957, 15671]
 
+KI_NUM_INPUT_FEATURES = 7
+KI_NUM_CLASSES = 4
+
+# Used whenever we need to visualzie points from different classes (t-SNE, KI visualization)
+ki_label_to_color_map = {0: "green", 1: "yellow", 2: "blue", 3: "red"}
