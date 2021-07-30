@@ -11,7 +11,8 @@ from torch.utils.tensorboard import SummaryWriter
 # Supported datasets - currently only Cora
 class DatasetType(enum.Enum):
     CORA = 0,
-    PPI = 1
+    PPI = 1,
+    KI = 2
 
 
 # Networkx is not precisely made with drawing as it's main feature but I experimented with it a bit
